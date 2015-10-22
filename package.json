@@ -1,0 +1,11 @@
+{
+  "name": "callernotes",
+  "version": "0.1.0",
+  "main": "main.js",
+  "devDependencies": {
+    "electron-prebuilt": "^0.34.0"
+  },
+  "dependencies": {
+    "sockjs-client": "^1.0.3"
+  }
+}
