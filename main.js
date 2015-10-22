@@ -19,6 +19,7 @@ var latest_callers = [];
 
 var appIcon = null;
 var contextMenu = null;
+var errorSleepTime = 500;
 
 app.on('window-all-closed', function() {
   // On OS X it is common for applications and their menu bar
@@ -38,11 +39,18 @@ app.on('ready', function() {
 		{ label: 'Settings', type: 'normal'},
 	]);
 	appIcon.setContextMenu(contextMenu)
+	make_connection()
 
+	// sock.close();
+});
+
+var make_connection = function()
+{
 	var sock = new SockJS('http://192.168.0.106:8889/chat');
 
 	sock.onopen = function() {
 		console.log('connection to server opened');
+		errorSleepTime = 500;
 		appIcon.setImage('logo_green.png');
 	};
 
@@ -50,14 +58,18 @@ app.on('ready', function() {
 		console.log('message', e.data);
 		new_caller(e.data);
 	};
+
 	sock.onclose = function() {
-		console.log('connection to server closed');
-
 		appIcon.setImage('logo_red.png');
-	};
 
-	// sock.close();
-});
+		if (errorSleepTime < 8000)
+		{
+			errorSleepTime *= 2;
+		}
+		console.log("Connection error; sleeping for", errorSleepTime, "ms");
+		setTimeout(make_connection, errorSleepTime);
+	};
+}
 
 var show_call_window = function(phone_number)
 {
