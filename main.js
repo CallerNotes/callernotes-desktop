@@ -119,6 +119,7 @@ var new_caller = function(call_info_json)
 		var caller_menu_item = new MenuItem({ label: phone_number,
 			type: 'normal',
 			click: function(caller_menu_item){
+				// FIXME: this will show old call info
 				show_call_window(call_info);
 			}
 		});

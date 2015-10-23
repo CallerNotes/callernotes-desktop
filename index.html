@@ -12,6 +12,7 @@
 		require('ipc').on('phone', function(message) {
 			phone_dict = JSON.parse(message);
 			window.document.title = 'Caller Notes: ' + phone_dict['callerid']
+			$('textarea').html(phone_dict['notes'])
 
 			$('#nextcaller_results').html(neatJSON(phone_dict['nextcaller']['records'], {
 				sorted:true,
@@ -22,13 +23,40 @@
 			tinymce.init({
 				selector:'textarea',
 			});
-
 			resizeEditor();
 		});
 
+		function auto_save(editor_id) {
+			// First we check if any changes have been made to the editor window
+			if(tinyMCE.get(editor_id).isDirty()) {
+				var content = tinyMCE.get(editor_id);
+				var notDirty = tinyMCE.get(editor_id);
+				content = JSON.stringify(content.getContent());
+				notDirty.isNotDirty = true;
+
+				$.ajax({
+				url: "http://localhost:8889/api/v1/notes/save?callerid=" + phone_dict['callerid'] + "&revision=" + phone_dict['revision'], // the path/name that will process our request
+					type: "POST",
+					data: content,
+					success: function(msg) {
+						console.log(msg);
+						msg = JSON.parse(msg);
+						// Here we reset the editor's changed (dirty) status
+						// This prevents the editor from performing another auto-save
+						// until more changes are made
+						notDirty.isNotDirty = true;
+						phone_dict['revision'] = msg['doc']['_rev'];
+					}
+				});
+			} else {
+				// If nothing has changed, don't do anything
+				return false;
+			}
+		}
+
 		function resizeEditor(myHeight) {
 			window.console.log('resizeEditor');
-			myEditor = tinymce.get()[0];
+			myEditor = tinymce.get('notes');
 			if (myEditor) {
 				try {
 					if (!myHeight) {            
@@ -55,10 +83,24 @@
 		window.onresize = function() {
 			resizeEditor();
 		}
+
+	$(document).ready(function() {
+		setInterval(function() {
+			for (edId in tinyMCE.editors)
+				auto_save(edId);
+		},30000);
+
+		// FIXME:
+		for (edId in tinyMCE.editors) {
+			$('#' + edId).blur(function() {
+				auto_save($(this).attr('id'));
+			});
+		}
+	});
 	</script>
   </head>
-  <body>
+  <body onunload="auto_save('notes')">
 	<pre id="nextcaller_results">
 	</pre>
-    <textarea></textarea>
+    <textarea name="notes"></textarea>
 </html>
