@@ -71,14 +71,14 @@ var make_connection = function()
 	};
 }
 
-var show_call_window = function(phone_number)
+var show_call_window = function(call_info)
 {
+	var phone_number = call_info['callerid'];
 	// create a window or bring it to the top if it does not already exist when
 	// a call comes in
 	if ( windows.hasOwnProperty(phone_number))
 	{
 		windows[phone_number].focus();
-		// TODO: needs to also bring the window to the current virtual desktop
 	}
 	else
 	{
@@ -87,7 +87,12 @@ var show_call_window = function(phone_number)
 
 
 		// and load the index.html of the app.
-		//newWindow.loadUrl('');
+		newWindow.loadUrl('file://' + __dirname + '/index.html');
+
+
+		newWindow.webContents.on('did-finish-load', function() {
+			newWindow.webContents.send('phone', JSON.stringify(call_info));
+		});
 
 		// Open the DevTools.
 		//newWindow.openDevTools();
@@ -102,8 +107,11 @@ var show_call_window = function(phone_number)
 		});
 	}
 }
-var new_caller = function(phone_number)
+
+var new_caller = function(call_info_json)
 {
+	var call_info = JSON.parse(call_info_json);
+	var phone_number = call_info['callerid']
 	// add the phone number to the menu if it is not already there
 	if (latest_callers.indexOf(phone_number) < 0)
 	{
@@ -111,7 +119,7 @@ var new_caller = function(phone_number)
 		var caller_menu_item = new MenuItem({ label: phone_number,
 			type: 'normal',
 			click: function(caller_menu_item){
-				show_call_window(caller_menu_item.label);
+				show_call_window(call_info);
 			}
 		});
 		contextMenu.insert(0, caller_menu_item)
@@ -123,5 +131,5 @@ var new_caller = function(phone_number)
 		// TODO: move it to the top if it is
 	}
 
-	show_call_window(phone_number);
+	show_call_window(call_info);
 }

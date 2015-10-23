@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Caller Notes</title>
+	<script src='./neatjson.js'></script>
+	<script src="https://tinymce.cachefly.net/4.2/tinymce.min.js"></script>
+	<script>
+		var phone_dict = null;
+		var $ = require('jquery');
+
+		require('ipc').on('phone', function(message) {
+			phone_dict = JSON.parse(message);
+			window.document.title = 'Caller Notes: ' + phone_dict['callerid']
+
+			$('#nextcaller_results').html(neatJSON(phone_dict['nextcaller']['records'], {
+				sorted:true,
+				short:true,
+				wrap:40
+			}));
+
+			tinymce.init({
+				selector:'textarea',
+			});
+
+			resizeEditor();
+		});
+
+		function resizeEditor(myHeight) {
+			window.console.log('resizeEditor');
+			myEditor = tinymce.get()[0];
+			if (myEditor) {
+				try {
+					if (!myHeight) {            
+						var targetHeight = window.innerHeight; // TODO: Change this to the height of a wrapper element
+						var mce_bars_height = 0;
+						var nextcaller_results_height = $('#nextcaller_results').height() + 16;
+						$('.mce-toolbar, .mce-statusbar, .mce-menubar').each(function(){
+							mce_bars_height += $(this).height();
+						});
+						myHeight = targetHeight - mce_bars_height - 8 - 19 - nextcaller_results_height;
+					}
+
+					// try a couple times and wait for the tinymce stuff to be ready
+					if (myHeight <0)
+						window.setTimeout(resizeEditor, 50);
+					else
+						myEditor.theme.resizeTo('100%', myHeight);  // sets the dimensions of the editable area
+				}
+				catch (err) {
+				}
+			}
+		}
+
+		window.onresize = function() {
+			resizeEditor();
+		}
+	</script>
+  </head>
+  <body>
+	<pre id="nextcaller_results">
+	</pre>
+    <textarea></textarea>
+</html>
